@@ -4,8 +4,6 @@ import logging
 import sys
 import socket
 import websockets
-from websockets.http import Headers
-from websockets.server import WebSocketServerProtocol
 import os
 import random
 import string
@@ -125,17 +123,16 @@ async def ws_handler(websocket):
             del clients[username]
             await broadcast_user_list()
 
-# --- Custom protocol to gracefully handle non-WebSocket requests ---
-class SafeProtocol(WebSocketServerProtocol):
-    async def process_request(self, path, headers):
-        # Handle any non-WebSocket HTTP requests (HEAD, favicon, etc.)
-        if headers.get("Upgrade", "").lower() != "websocket":
-            return (
-                200,
-                Headers([("Content-Type", "text/plain")]),
-                b"OK",  # Responds without killing server
-            )
-        return None
+# --- Fix for HEAD/favicon requests (works in websockets 12+) ---
+async def process_request(path, request_headers):
+    # If it's a normal HTTP request (HEAD, favicon, health check), reply OK
+    if request_headers.get("Upgrade", "").lower() != "websocket":
+        return (
+            200,
+            [("Content-Type", "text/plain")],
+            b"OK",
+        )
+    return None  # Continue as WebSocket
 
 async def main():
     global registered_users
@@ -146,7 +143,7 @@ async def main():
         ws_handler,
         HOST,
         PORT,
-        create_protocol=SafeProtocol,  # Protect against HEAD requests
+        process_request=process_request  # Handle non-WS requests safely
     ):
         await asyncio.Future()
 
