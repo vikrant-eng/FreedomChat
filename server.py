@@ -4,6 +4,8 @@ import logging
 import sys
 import socket
 import websockets
+from websockets.http import Headers
+from websockets.server import WebSocketServerProtocol
 import os
 import random
 import string
@@ -122,28 +124,30 @@ async def ws_handler(websocket):
         if username and clients.get(username) == websocket:
             del clients[username]
             await broadcast_user_list()
-async def process_request(path, request_headers):
-    # Catch favicon or health checks
-    if path == "/favicon.ico" or "User-Agent" in request_headers:
-        return (
-            200,
-            [("Content-Type", "text/plain")],
-            b"OK",  # Respond with OK instead of crashing
-        )
-    return None  # Continue normal WebSocket handshake
+
+# --- Custom protocol to gracefully handle non-WebSocket requests ---
+class SafeProtocol(WebSocketServerProtocol):
+    async def process_request(self, path, headers):
+        # Handle any non-WebSocket HTTP requests (HEAD, favicon, etc.)
+        if headers.get("Upgrade", "").lower() != "websocket":
+            return (
+                200,
+                Headers([("Content-Type", "text/plain")]),
+                b"OK",  # Responds without killing server
+            )
+        return None
+
 async def main():
     global registered_users
     registered_users = await async_load_users()
     logger.info(f"🚀 Starting signaling server at ws://{HOST}:{PORT}")
 
-    # This wrapper prevents the "HEAD request" crash
-    async def safe_handler(websocket, path):
-        try:
-            await ws_handler(websocket)
-        except Exception as e:
-            logger.warning(f"Ignored non-WebSocket or invalid request: {e}")
-
-    async with websockets.serve(safe_handler, HOST, PORT, process_request=process_request):
+    async with websockets.serve(
+        ws_handler,
+        HOST,
+        PORT,
+        create_protocol=SafeProtocol,  # Protect against HEAD requests
+    ):
         await asyncio.Future()
 
 if __name__ == "__main__":
