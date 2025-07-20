@@ -1,7 +1,7 @@
  // WebRTC and WebSocket configuration
         // const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // const wsUrl = ${protocol}//${window.location.hostname}:8765;
-        const wsUrl = "ws://10.232.154.240:8765";
+        const wsUrl = "ws://10.204.18.114:8765";
 
 
         let ws, myName, myCode, pc, dataChannel, targetName;

@@ -143,7 +143,12 @@ async def process_request(path, request_headers):
             b"OK",
         )
     return None  # Continue as WebSocket
-
+async def ws_wrapper(websocket):
+    # Reject any non-WebSocket upgrade (like HEAD/health-check)
+    if websocket.request_headers.get("Upgrade", "").lower() != "websocket":
+        await websocket.close(code=1000, reason="Non-WebSocket request")
+        return
+    await ws_handler(websocket)
 # --- Main ---
 async def main():
     global registered_users
@@ -151,7 +156,7 @@ async def main():
     logger.info(f"🚀 Starting signaling server at ws://{HOST}:{PORT}")
 
     async with websockets.serve(
-        ws_handler,
+        ws_wrapper,
         HOST,
         PORT,
         process_request=process_request  # Prevent crash on health checks
