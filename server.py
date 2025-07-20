@@ -10,6 +10,7 @@ import string
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 
+# --- Logging ---
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
@@ -18,10 +19,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 executor = ThreadPoolExecutor()
 
+# --- Globals ---
 USERS_FILE = "users.json"
-clients = {}
-registered_users = {}
+clients = {}            # username -> websocket
+registered_users = {}   # username -> { "code": str }
 
+# --- Persistent Storage ---
 def load_users():
     if os.path.exists(USERS_FILE):
         try:
@@ -46,6 +49,7 @@ async def async_load_users():
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(executor, load_users)
 
+# --- Utility ---
 def generate_user_code(length=6):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
@@ -63,6 +67,7 @@ def get_local_ip():
 HOST = get_local_ip()
 PORT = 8765
 
+# --- Broadcast all users (with online status) ---
 async def broadcast_user_list():
     user_list = [
         {"name": name, "code": info["code"], "is_online": name in clients}
@@ -75,6 +80,7 @@ async def broadcast_user_list():
         except Exception as e:
             logger.warning(f"Failed sending user list to client: {e}")
 
+# --- WebSocket Handler ---
 async def ws_handler(websocket):
     username = None
     logger.info(f"🔌 New connection from {websocket.remote_address}")
@@ -89,11 +95,13 @@ async def ws_handler(websocket):
                 if not username:
                     continue
 
+                # Disconnect any old session for this user
                 if username in clients:
                     old_ws = clients[username]
                     if old_ws.open and old_ws != websocket:
                         await old_ws.close(code=1000, reason="Replaced by new connection")
 
+                # Register new user
                 if username not in registered_users:
                     code = generate_user_code()
                     registered_users[username] = {"code": code}
@@ -107,6 +115,7 @@ async def ws_handler(websocket):
                     "code": registered_users[username]["code"]
                 }))
 
+            # Forward signaling/chat events to target
             elif msg_type in ("offer", "answer", "candidate", "call-reject", "call-ended", "chat", "read"):
                 frm = data.get("from")
                 target = data.get("to")
@@ -119,13 +128,14 @@ async def ws_handler(websocket):
     except websockets.exceptions.ConnectionClosed:
         logger.info(f"❌ Connection closed for {username or websocket.remote_address}")
     finally:
+        # Cleanup
         if username and clients.get(username) == websocket:
             del clients[username]
             await broadcast_user_list()
 
-# --- Fix for HEAD/favicon requests (works in websockets 12+) ---
+# --- Handle Render health checks (HEAD, favicon) ---
 async def process_request(path, request_headers):
-    # If it's a normal HTTP request (HEAD, favicon, health check), reply OK
+    # If it's not a WebSocket upgrade (like Render's HEAD), just return OK
     if request_headers.get("Upgrade", "").lower() != "websocket":
         return (
             200,
@@ -134,6 +144,7 @@ async def process_request(path, request_headers):
         )
     return None  # Continue as WebSocket
 
+# --- Main ---
 async def main():
     global registered_users
     registered_users = await async_load_users()
@@ -143,9 +154,9 @@ async def main():
         ws_handler,
         HOST,
         PORT,
-        process_request=process_request  # Handle non-WS requests safely
+        process_request=process_request  # Prevent crash on health checks
     ):
-        await asyncio.Future()
+        await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":
     try:
