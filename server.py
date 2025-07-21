@@ -3,12 +3,15 @@ import json
 import logging
 import sys
 import socket
-import websockets
 import os
 import random
 import string
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
+
+import websockets
+from websockets.server import serve
+from websockets.exceptions import ConnectionClosed
 
 # --- Logging ---
 logging.basicConfig(
@@ -22,7 +25,7 @@ executor = ThreadPoolExecutor()
 # --- Globals ---
 USERS_FILE = "users.json"
 clients = {}            # username -> websocket
-registered_users = {}   # username -> { "code": str }
+registered_users = {}   # username -> {"code": str}
 
 # --- Persistent Storage ---
 def load_users():
@@ -67,7 +70,7 @@ def get_local_ip():
 HOST = get_local_ip()
 PORT = 8765
 
-# --- Broadcast all users (with online status) ---
+# --- Broadcast users ---
 async def broadcast_user_list():
     user_list = [
         {"name": name, "code": info["code"], "is_online": name in clients}
@@ -95,7 +98,7 @@ async def ws_handler(websocket):
                 if not username:
                     continue
 
-                # Disconnect any old session for this user
+                # Disconnect old session
                 if username in clients:
                     old_ws = clients[username]
                     if old_ws.open and old_ws != websocket:
@@ -103,8 +106,7 @@ async def ws_handler(websocket):
 
                 # Register new user
                 if username not in registered_users:
-                    code = generate_user_code()
-                    registered_users[username] = {"code": code}
+                    registered_users[username] = {"code": generate_user_code()}
                     await async_save_users()
 
                 clients[username] = websocket
@@ -115,9 +117,7 @@ async def ws_handler(websocket):
                     "code": registered_users[username]["code"]
                 }))
 
-            # Forward signaling/chat events to target
             elif msg_type in ("offer", "answer", "candidate", "call-reject", "call-ended", "chat", "read"):
-                frm = data.get("from")
                 target = data.get("to")
                 if target in clients:
                     try:
@@ -125,44 +125,45 @@ async def ws_handler(websocket):
                     except Exception as e:
                         logger.warning(f"Failed to forward {msg_type} to '{target}': {e}")
 
-    except websockets.exceptions.ConnectionClosed:
+    except ConnectionClosed:
         logger.info(f"❌ Connection closed for {username or websocket.remote_address}")
     finally:
-        # Cleanup
         if username and clients.get(username) == websocket:
             del clients[username]
             await broadcast_user_list()
 
-# --- Handle Render health checks (HEAD, favicon) ---
+# --- Corrected process_request for HTTP health checks ---
 async def process_request(path, request_headers):
-    # If it's not a WebSocket upgrade (like Render's HEAD), just return OK
     if request_headers.get("Upgrade", "").lower() != "websocket":
         return (
             200,
             [("Content-Type", "text/plain")],
-            b"OK",
+            b"OK"
         )
-    return None  # Continue as WebSocket
+    return None
+
+# --- Wrapper to reject non-WebSocket requests (optional, not required with above fix) ---
 async def ws_wrapper(websocket):
-    # Reject any non-WebSocket upgrade (like HEAD/health-check)
     if websocket.request_headers.get("Upgrade", "").lower() != "websocket":
         await websocket.close(code=1000, reason="Non-WebSocket request")
         return
     await ws_handler(websocket)
+
 # --- Main ---
 async def main():
     global registered_users
     registered_users = await async_load_users()
-    logger.info(f"🚀 Starting signaling server at ws://{HOST}:{PORT}")
+    logger.info(f"🚀 Server listening on ws://{HOST}:{PORT}")
 
-    async with websockets.serve(
+    async with serve(
         ws_wrapper,
         HOST,
         PORT,
-        process_request=process_request  # Prevent crash on health checks
+        process_request=process_request
     ):
-        await asyncio.Future()  # Run forever
+        await asyncio.Future()  # run forever
 
+# --- Run ---
 if __name__ == "__main__":
     try:
         asyncio.run(main())
