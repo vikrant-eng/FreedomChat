@@ -18,7 +18,7 @@ registered_users = {}
 
 # --- Allowed Origins (for WebSockets) ---
 ALLOWED_ORIGINS = [
-    "http://localhost:8000",
+    "http://localhost:5000",
     "https://openchat-h54k.onrender.com",
     "https://openchat-h54k.onrender.com/"
 ]

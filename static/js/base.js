@@ -61,10 +61,22 @@ $(document).ready(() => {
         connectWebSocket(name);
     });
 
+
+    // Maximum height (approx. 5 lines)
+    const maxHeight = 5 * 24; // 24px per line (adjust if needed)
+    
+    // Auto-resize textarea but limit to max height
+    chatTextEl.addEventListener('input', () => {
+        chatTextEl.style.height = 'auto';
+        chatTextEl.style.height = Math.min(chatTextEl.scrollHeight, maxHeight) + 'px';
+        chatTextEl.style.overflowY = chatTextEl.scrollHeight > maxHeight ? 'auto' : 'hidden';
+    });
     // Send message button and enter key handlers
+
     sendChatBtn.addEventListener('click', sendChatMessage);
-    chatTextEl.addEventListener('keypress', (e) => {
-        if (e.which === 13 && !e.shiftKey) {
+    // Send message on Enter, allow Shift+Enter for new lines
+    chatTextEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendChatMessage();
         }
@@ -512,6 +524,24 @@ function setupDataChannel() {
     };
 }
 
+// function sendChatMessage() {
+//     const msg = chatTextEl.value.trim();
+//     if (!msg || !dataChannel || dataChannel.readyState !== 'open') return;
+
+//     const msgId = generateMsgId();
+//     const messageData = {
+//         type: 'chat',
+//         msg,
+//         msgId,
+//         sender: myName
+//     };
+
+//     dataChannel.send(JSON.stringify(messageData));
+//     appendChatMessage(myName, msg, true, msgId, 'sent');
+//     chatTextEl.value = '';
+// }
+
+
 function sendChatMessage() {
     const msg = chatTextEl.value.trim();
     if (!msg || !dataChannel || dataChannel.readyState !== 'open') return;
@@ -527,6 +557,7 @@ function sendChatMessage() {
     dataChannel.send(JSON.stringify(messageData));
     appendChatMessage(myName, msg, true, msgId, 'sent');
     chatTextEl.value = '';
+    chatTextEl.style.height = 'auto'; // Reset height after sending
 }
 
 function appendChatMessage(sender, msg, save = true, msgId = '', status = '') {
