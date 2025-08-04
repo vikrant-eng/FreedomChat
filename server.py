@@ -65,7 +65,7 @@ def get_local_ip():
     except Exception:
         return "127.0.0.1"
 
-HOST = get_local_ip()
+HOST ="0.0.0.0"#get_local_ip()
 PORT = 8765
 
 # --- Broadcast users ---
