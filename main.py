@@ -16,9 +16,16 @@ USERS_FILE = "users.json"
 clients = {}
 registered_users = {}
 
+# --- Allowed Origins (for WebSockets) ---
+ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "https://openchat-h54k.onrender.com",
+    "https://openchat-h54k.onrender.com/"
+]
+
 # --- Flask app ---
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:8000", "https://openchat-h54k.onrender.com"]}})
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all for HTTP routes
 sock = Sock(app)
 
 @app.route("/")
@@ -56,12 +63,13 @@ def broadcast_user_list():
             ws.send(message)
         except Exception as e:
             logger.warning(f"Failed sending user list: {e}")
-ALLOWED_ORIGINS = ["http://localhost:8000", "https://openchat-h54k.onrender.com"]
+
 # --- WebSocket endpoint ---
 @sock.route("/ws")
 def ws_handler(ws):
-    origin = ws.environ.get("HTTP_ORIGIN")
-    if origin not in ALLOWED_ORIGINS:
+    # --- Check WebSocket Origin ---
+    origin = (ws.environ.get("HTTP_ORIGIN") or "").rstrip("/")
+    if origin not in [o.rstrip("/") for o in ALLOWED_ORIGINS]:
         logger.warning(f"Blocked WS connection from origin: {origin}")
         ws.close()
         return
@@ -80,12 +88,14 @@ def ws_handler(ws):
                 if not username:
                     continue
 
+                # Close old connection if user already connected
                 if username in clients:
                     try:
                         clients[username].close()
                     except:
                         pass
 
+                # Register new user if not exists
                 if username not in registered_users:
                     registered_users[username] = {"code": generate_user_code()}
                     save_users()
@@ -98,6 +108,7 @@ def ws_handler(ws):
                     "code": registered_users[username]["code"]
                 }))
 
+            # Forward signaling and chat messages
             elif msg_type in ("offer", "answer", "candidate", "call-reject", "call-ended", "chat", "read"):
                 target = data.get("to")
                 if target in clients:
@@ -113,24 +124,10 @@ def ws_handler(ws):
             del clients[username]
             broadcast_user_list()
 
-# --- Entry point ---
-# if __name__ == "__main__":
-#     registered_users = load_users()
-#     port = int(os.environ.get("PORT", 8000))
-
-#     from hypercorn.asyncio import serve
-#     from hypercorn.config import Config
-#     import asyncio
-
-#     config = Config()
-#     config.bind = [f"0.0.0.0:{port}"]
-
-#     asyncio.run(serve(app, config))
-# --- Optional: Start Flask and WebSocket servers ---
-# Uncomment the following lines to run this script directly
+# --- Entry Point ---
 if __name__ == "__main__":
     registered_users = load_users()
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", 5000))  # Render sets PORT automatically
 
     from hypercorn.asyncio import serve
     from hypercorn.config import Config
@@ -140,36 +137,3 @@ if __name__ == "__main__":
     config.bind = [f"0.0.0.0:{port}"]
 
     asyncio.run(serve(app, config))
-
-
-
-
-
-
-# import subprocess
-# import os
-# import sys
-
-# # --- Optional: Activate venv automatically ---
-# # Get path to venv's python
-# venv_python = os.path.join("venv", "Scripts", "python.exe") if os.name == "nt" else os.path.join("venv", "bin", "python")
-
-# # If venv is not activated, use its python
-# python_exec = venv_python if os.path.exists(venv_python) else sys.executable
-
-# # --- Start Flask app (app.py) ---
-# flask_process = subprocess.Popen([python_exec, "app.py"])
-# print("✅ Flask app started (app.py)")
-
-# # --- Start WebSocket server (server.py) ---
-# server_process = subprocess.Popen([python_exec, "server.py"])
-# print("✅ WebSocket server started (server.py)")
-
-# try:
-#     # Wait for both processes
-#     flask_process.wait()
-#     server_process.wait()
-# except KeyboardInterrupt:
-#     print("🛑 Shutting down...")
-#     flask_process.terminate()
-#     server_process.terminate()
