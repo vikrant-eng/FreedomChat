@@ -266,7 +266,7 @@
                 if (u.is_online) {
                     onlineUsers.push(u);
                 } else {
-                    offlineUsers.push(u);
+                  //  offlineUsers.push(u);
                 }
             });
 
@@ -1001,3 +1001,18 @@
             showToast("Call Rejected",` ${targetName} rejected your call`);
             endCall();
         }
+
+        // WhatsApp-like mobile navigation
+document.addEventListener('DOMContentLoaded', function() {
+    // When a contact is clicked, activate chat view on mobile
+    document.getElementById('contactsList').addEventListener('click', function(e) {
+        if (window.innerWidth <= 576) {
+            document.getElementById('appContainer').classList.add('chat-active');
+        }
+    });
+
+    // Back button to return to contacts list
+    document.getElementById('backToContacts').addEventListener('click', function() {
+        document.getElementById('appContainer').classList.remove('chat-active');
+    });
+});

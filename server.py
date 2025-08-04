@@ -7,9 +7,7 @@ import os
 import random
 import string
 from functools import lru_cache
-from concurrent.futures import ThreadPoolExecutor
-
-import websockets
+from concurrent.futures import ThreadPoolExecutor 
 from websockets.server import serve
 from websockets.exceptions import ConnectionClosed
 

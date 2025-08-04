@@ -1,4 +1,5 @@
 from flask import Flask, render_template
+import socket
 
 app = Flask(__name__)
 
@@ -7,6 +8,10 @@ def home():
     return render_template('chat.html')
 
 if __name__ == '__main__':
-    # Replace '0.0.0.0' with your custom IP address
-    # For example, '192.168.1.100'
-    app.run(host='10.0.3.8', port=8080, debug=True)
+    # Find a free port
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', 0))
+    port = s.getsockname()[1]
+    s.close()
+
+    app.run(host='10.0.3.8', port=port, debug=True)

@@ -4,13 +4,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebRTC Chat</title>
+    <title>Chat</title>
     <link rel="icon" href="data:,">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        #gifPickerContainer {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #gifResults img {
+            width: 100px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: transform 0.2s;
+        }
+
+        #gifResults img:hover {
+            transform: scale(1.05);
+        }
+    </style>
 </head>
 
 <body>
@@ -18,43 +39,44 @@
     <div class="registration-modal" id="registrationModal">
         <div class="registration-box">
             <div class="text-center mb-4">
-                <h3>Join WebRTC Chat</h3>
+                <h3>Join Chat</h3>
                 <p class="text-muted">Enter your name to get started</p>
             </div>
-            
+
             <div class="mb-3">
                 <label for="nameInput" class="form-label">Your Name:</label>
                 <input type="text" class="form-control" id="nameInput" placeholder="Enter your name">
             </div>
-            
+
             <button type="button" class="btn btn-primary w-100" id="registerBtn">
                 Go Online
             </button>
         </div>
     </div>
-    
+
     <div class="app-container" style="display: none;" id="appContainer">
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h3><i class="fas fa-comments me-2"></i> WebRTC Chat</h3>
+                <h3><i class="fas fa-comments me-2"></i>Chat</h3>
             </div>
-            
+
             <div class="user-info">
                 <div class="user-avatar" id="userAvatar">JD</div>
                 <div class="user-details">
                     <div class="user-name" id="userName">John Doe</div>
-                    <div class="user-status"><span class="online-badge"></span> <span id="userStatus">Online</span></div>
+                    <div class="user-status"><span class="online-badge"></span> <span id="userStatus">Online</span>
+                    </div>
                 </div>
             </div>
-            
+
             <div class="search-container">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" id="userSearch" placeholder="Search contacts...">
                 </div>
             </div>
-            
+
             <div class="contacts-list" id="contactsList">
                 <!-- Users will be populated here dynamically -->
                 <div class="text-center py-4 text-muted" id="loadingIndicator">
@@ -65,20 +87,24 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Chat Area -->
         <div class="chat-area">
             <div class="chat-header">
+                <button class="back-btn" id="backToContacts" title="Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
                 <div class="chat-header-info">
                     <div class="chat-header-name" id="chatWithName">Select a user to chat</div>
-                    <div class="chat-header-status"><span class="online-badge" id="chatStatusIndicator"></span> <span id="chatStatusText">Offline</span></div>
+                    <div class="chat-header-status"><span class="online-badge" id="chatStatusIndicator"></span> <span
+                            id="chatStatusText">Offline</span></div>
                 </div>
                 <div class="chat-header-actions">
                     <button id="voiceCallBtn" title="Voice call"><i class="fas fa-phone"></i></button>
                     <button title="More options"><i class="fas fa-ellipsis-v"></i></button>
                 </div>
             </div>
-            
+
             <div class="chat-messages" id="chatMessages">
                 <div class="text-center text-muted py-5">
                     <i class="fas fa-comments fa-3x mb-3"></i>
@@ -86,11 +112,12 @@
                     <p>Select a contact to start chatting</p>
                 </div>
             </div>
-            
+
             <div class="chat-input-area">
                 <button title="Add attachment" id="attachmentBtn"><i class="fas fa-paperclip"></i></button>
                 <input type="file" id="fileInput" style="display: none;">
-                <button title="Add emoji"><i class="far fa-smile"></i></button>
+                <button title="Add emoji" id="emojiBtn"><i class="far fa-smile"></i></button>
+                <button title="Add GIF" id="gifBtn"><i class="fas fa-file-video"></i></button>
                 <div class="chat-input">
                     <input type="text" id="chatText" placeholder="Type a message..." disabled>
                 </div>
@@ -98,9 +125,17 @@
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
+
+
+            <!-- GIF Picker Container -->
+            <div id="gifPickerContainer"
+                style="display:none; position:absolute; z-index:9999; background:#fff; border:1px solid #ccc; padding:10px; width:300px; max-height:400px; overflow:auto;">
+                <input type="text" id="gifSearchInput" placeholder="Search GIFs..." class="form-control mb-2" />
+                <div id="gifResults" style="display: flex; flex-wrap: wrap; gap: 5px;"></div>
+            </div>
         </div>
     </div>
-    
+
     <!-- Call UI -->
     <div class="call-container" id="callContainer">
         <div class="call-box">
@@ -117,20 +152,154 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Toast Notification -->
     <div class="toast-container" id="toastContainer">
         <!-- Toasts will be added here dynamically -->
     </div>
 
- <!-- Audio elements for WebRTC -->
-<audio id="remoteAudio" autoplay></audio>
-<audio id="localAudio" autoplay muted></audio>
- 
+    <!-- Audio elements for WebRTC -->
+    <audio id="remoteAudio" autoplay></audio>
+    <audio id="localAudio" autoplay muted></audio>
+
     <!-- <audio id="notificationSound" src="notification.mp3"></audio>
     <audio id="callSound" src="call.mp3"></audio> -->
-    
+
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+
+    <!-- Load main picmo library -->
+    <script src="https://cdn.jsdelivr.net/npm/picmo@5.8.5/dist/umd/index.js"></script>
+    <!-- Then the popup-picker bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/@picmo/popup-picker@5.8.5/dist/umd/index.js"></script>
+
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const emojiBtn = document.getElementById('emojiBtn');
+            const chatInput = document.getElementById('chatText');
+            const gifBtn = document.getElementById('gifBtn');
+            const gifContainer = document.getElementById('gifPickerContainer');
+            const gifSearchInput = document.getElementById('gifSearchInput');
+            const gifResults = document.getElementById('gifResults');
+            const chatMessages = document.getElementById('chatMessages');
+            const apiKey = 'JCIRsVy3Ar2v3cK2fCdLVBaMS7KjF017'; // Your Giphy API Key
+
+            // ✅ Emoji Picker (Picmo)
+            const picker = picmoPopup.createPopup({}, {
+                triggerElement: emojiBtn,
+                referenceElement: emojiBtn,
+                position: 'top-start',
+                showPreview: false,
+                showSearch: false
+            });
+
+            picker.addEventListener('emoji:select', event => {
+                const emoji = event.emoji;
+                const start = chatInput.selectionStart;
+                const end = chatInput.selectionEnd;
+                const text = chatInput.value;
+                chatInput.value = text.slice(0, start) + emoji + text.slice(end);
+                chatInput.focus();
+                chatInput.selectionStart = chatInput.selectionEnd = start + emoji.length;
+            });
+
+            emojiBtn.addEventListener('click', event => {
+                event.stopPropagation();
+                picker.toggle();
+            });
+
+            // ✅ GIF Picker (Giphy)
+            async function fetchGifs(query = "funny") {
+                gifResults.innerHTML = '<p class="text-muted">Loading...</p>';
+                try {
+                    const response = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=12&rating=g`);
+                    const data = await response.json();
+                    gifResults.innerHTML = data.data.map(gif =>
+                        `<img src="${gif.images.fixed_height_small.url}" 
+              data-url="${gif.images.original.url}" 
+              style="width:100px; cursor:pointer;">`
+                    ).join('');
+                } catch (err) {
+                    gifResults.innerHTML = '<p class="text-danger">Failed to load GIFs</p>';
+                }
+            }
+
+            gifBtn.addEventListener('click', async () => {
+                if (gifContainer.style.display === 'none') {
+                    const rect = gifBtn.getBoundingClientRect();
+                    gifContainer.style.position = 'absolute';
+                    gifContainer.style.left = `${rect.left + window.scrollX}px`;
+                    // gifContainer.style.top = `${rect.bottom + window.scrollY + 5}px`; // +5px spacing
+                    gifContainer.style.bottom = '5px';
+                    gifContainer.style.width = '300px';
+                    gifContainer.style.display = 'block'; // Show as block instead of flex
+                    gifContainer.style.zIndex = 9999;
+                    await fetchGifs();
+                } else {
+                    gifContainer.style.display = 'none';
+                }
+            });
+
+            // gifResults.addEventListener('click', e => {
+            //     if (e.target.tagName === 'IMG' && e.target.dataset.url) {
+            //         const gifUrl = e.target.dataset.url;
+            //         const img = document.createElement('img');
+            //         img.src = gifUrl;
+            //         img.style.maxWidth = '150px';
+
+            //         const bubble = document.createElement('div');
+            //         bubble.className = 'message sent';
+
+            //         bubble.style.backgroundColor = '#e0f7fa !important';
+            //         bubble.appendChild(img);
+
+            //         chatMessages.appendChild(bubble);
+            //         chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            //         gifContainer.style.display = 'none';
+            //     }
+            // });
+
+            gifResults.addEventListener('click', e => {
+                if (e.target.tagName === 'IMG' && e.target.dataset.url) {
+                    const gifUrl = e.target.dataset.url;
+                    const imgHtml = `<img src="${gifUrl}" style="max-width:150px; border-radius:6px;">`;
+
+                    // Send GIF as message
+                    const msgId = generateMsgId();
+                    const messageData = {
+                        type: 'chat',
+                        msg: imgHtml,
+                        msgId,
+                        sender: myName
+                    };
+
+                    if (dataChannel && dataChannel.readyState === 'open') {
+                        dataChannel.send(JSON.stringify(messageData));
+                        appendChatMessage(myName, imgHtml, true, msgId, 'sent');
+                    }
+
+                    gifContainer.style.display = 'none';
+                }
+            });
+
+            gifSearchInput.addEventListener('input', async () => {
+                const query = gifSearchInput.value.trim();
+                if (query.length >= 2) {
+                    await fetchGifs(query);
+                }
+            });
+
+            document.addEventListener('click', e => {
+                if (!gifContainer.contains(e.target) && !gifBtn.contains(e.target)) {
+
+                    gifContainer.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
 
 </body>
 

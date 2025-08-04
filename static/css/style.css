@@ -535,46 +535,119 @@
             width: 100%;
             max-width: 400px;
         }
-        
-        /* Responsive */
-         @media (max-width: 768px) {
-            .sidebar {
-                width: 80px;
-            }
-            
-            .user-details, .contact-details, .contact-time, .contact-last-msg, .search-box input {
-                display: none;
-            }
-            
-            .user-info, .contact-item {
-                justify-content: center;
-            }
-            
-            .user-avatar, .contact-avatar {
-                margin-right: 0;
-            }
+        #backToContacts {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            align-items: center;
+            cursor: pointer;
+            margin-right: 10px;
         }
-        @media (max-width: 576px) {
-            .app-container {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-            }
-            
-            .chat-area {
-                width: 100%;
-            }
-            
-            .chat-header, .chat-input-area {
-                padding: 15px;
-            }
-            
-            .chat-messages {
-                padding: 15px;
-            }
-        }
+       /* For tablets and below */
+@media (max-width: 900px) {
+    .app-container {
+        max-width: 100vw;
+        height: 100vh;
+    }
+    .sidebar {
+        width: 180px;
+        min-width: 120px;
+    }
+    .chat-header  {
+        padding: 10px;
+    }
+     /* .chat-input-area {
+        margin-bottom: 10px;
+     } */
+    .chat-messages {
+        padding: 10px;
+    }
+}
+
+/* For mobile devices */
+/*   */
+
+/* Optional: Make sure modals and overlays fit small screens */
+@media (max-width: 400px) {
+    .registration-box, .call-box {
+        max-width: 99vw;
+        padding: 8px;
+    }
+}
+@media (max-width: 576px) {
+    .back-btn {
+        display: none;
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        font-size: 1.5rem;
+        align-items: center;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+    .app-container.chat-active .sidebar {
+        display: none !important;
+    }
+    .app-container.chat-active .chat-area {
+        display: flex !important;
+        width: 100vw;
+    }
+    .app-container.chat-active .back-btn {
+        display: flex !important;
+    }
+    .chat-area {
+         flex-direction: column;
+        height: 100vh;
+        min-height: 0;
+        position: relative;
+     display:none;
+      width: 100vw;
+    }
+    .chat-area.chat-active {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        min-height: 0;
+        position: relative; 
+        width: 100vw;
+    }
+       .chat-input-area {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        z-index: 100;
+        border-top: 1px solid var(--border-color);
+        background: white;
+        padding: 10px 8px;
+        box-sizing: border-box;
+    }
+     .chat-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        z-index: 101;
+        border-bottom: 1px solid var(--border-color);
+        background: white;
+        padding: 10px 8px;
+        box-sizing: border-box;
+    }
+        .sidebar {
+        width: 100%  !important;
+        min-width: 120px;
+    }
+    #backToContacts {
+        display: inline-flex;
+    }
+      .chat-messages {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding-top: 60px;    /* Height of chat-header */
+        padding-bottom: 70px; /* Height of chat-input-area */
+    }
+}
