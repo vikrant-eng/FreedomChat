@@ -249,6 +249,8 @@ body {
 }
 
 .message {
+    white-space: pre-wrap;
+    word-wrap: break-word;
     max-width: 70%;
     padding: 10px 15px;
     border-radius: 18px;

@@ -591,10 +591,8 @@ function appendChatMessage(sender, msg, save = true, msgId = '', status = '') {
 
     const messageElement = document.createElement('div');
     messageElement.className = ` message ${messageClass}`;
-    messageElement.innerHTML = `
-                ${contentHtml}
-                <div class="message-time">${time} ${statusIcon}</div>`
-        ;
+    messageElement.innerHTML = `${contentHtml}<div class="message-time">${time} ${statusIcon}</div>`; 
+         
 
     if (msgId) {
         messageElement.dataset.msgId = msgId;
