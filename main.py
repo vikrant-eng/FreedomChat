@@ -17,7 +17,7 @@ registered_users = {}
 
 # --- Flask app ---
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:8000", "https://freedomchat.onrender.com"]}})
+CORS(app, resources={r"/*": {"origins": ["http://localhost:8000", "https://openchat.onrender.com"]}})
 sock = Sock(app)
 
 @app.route("/")
@@ -55,7 +55,7 @@ def broadcast_user_list():
             ws.send(message)
         except Exception as e:
             logger.warning(f"Failed sending user list: {e}")
-ALLOWED_ORIGINS = ["http://localhost:8000", "https://freedomchat.onrender.com"]
+ALLOWED_ORIGINS = ["http://localhost:8000", "https://openchat.onrender.com"]
 # --- WebSocket endpoint ---
 @sock.route("/ws")
 def ws_handler(ws):
