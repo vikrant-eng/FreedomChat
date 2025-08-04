@@ -17,6 +17,7 @@ registered_users = {}
 
 # --- Flask app ---
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:8000", "https://freedomchat.onrender.com"]}})
 sock = Sock(app)
 
 @app.route("/")
@@ -54,10 +55,16 @@ def broadcast_user_list():
             ws.send(message)
         except Exception as e:
             logger.warning(f"Failed sending user list: {e}")
-
+ALLOWED_ORIGINS = ["http://localhost:8000", "https://freedomchat.onrender.com"]
 # --- WebSocket endpoint ---
 @sock.route("/ws")
 def ws_handler(ws):
+    origin = ws.environ.get("HTTP_ORIGIN")
+    if origin not in ALLOWED_ORIGINS:
+        logger.warning(f"Blocked WS connection from origin: {origin}")
+        ws.close()
+        return
+
     username = None
     try:
         while True:
@@ -108,7 +115,7 @@ def ws_handler(ws):
 # --- Entry point ---
 if __name__ == "__main__":
     registered_users = load_users()
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 8000))
 
     from hypercorn.asyncio import serve
     from hypercorn.config import Config
