@@ -2,7 +2,7 @@
         // const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // const wsUrl = ${protocol}//${window.location.hostname}:8765;10.204.39.98:8765
 
-        const wsUrl = "wss://freedomchat-2.onrender.com";
+        const wsUrl = "wss://freedomchat-2.onrender.com/ws";
 
 
         let ws, myName, myCode, pc, dataChannel, targetName;
