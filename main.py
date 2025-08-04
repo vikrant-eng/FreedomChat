@@ -4,6 +4,7 @@ import random
 import string
 import logging
 from flask import Flask, render_template
+from flask_cors import CORS
 from flask_sock import Sock
 
 # --- Logging ---
@@ -17,7 +18,7 @@ registered_users = {}
 
 # --- Flask app ---
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:8000", "https://openchat.onrender.com"]}})
+CORS(app, resources={r"/*": {"origins": ["http://localhost:8000", "https://openchat-h54k.onrender.com"]}})
 sock = Sock(app)
 
 @app.route("/")
@@ -55,7 +56,7 @@ def broadcast_user_list():
             ws.send(message)
         except Exception as e:
             logger.warning(f"Failed sending user list: {e}")
-ALLOWED_ORIGINS = ["http://localhost:8000", "https://openchat.onrender.com"]
+ALLOWED_ORIGINS = ["http://localhost:8000", "https://openchat-h54k.onrender.com"]
 # --- WebSocket endpoint ---
 @sock.route("/ws")
 def ws_handler(ws):
