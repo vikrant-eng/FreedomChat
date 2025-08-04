@@ -387,9 +387,12 @@ function openChat(user, code) {
     updateUserList();
 
     // Enable chat input
-    chatTextEl.disabled = false;
-    sendChatBtn.disabled = false;
-
+    // chatTextEl.disabled = false;
+    // sendChatBtn.disabled = false;
+    document.addEventListener('DOMContentLoaded', () => {
+      chatTextEl.disabled = false;
+       sendChatBtn.disabled = false;
+    });
     // Load chat history
     loadChatHistory(myName, user);
 
@@ -543,7 +546,7 @@ function setupDataChannel() {
 
 
 function sendChatMessage() {
-    const msg = chatTextEl.value.trim();
+    const msg = chatTextEl.value//.trim();
     if (!msg || !dataChannel || dataChannel.readyState !== 'open') return;
 
     const msgId = generateMsgId();
@@ -572,7 +575,7 @@ function appendChatMessage(sender, msg, save = true, msgId = '', status = '') {
             '<span class="message-status"><i class="fas fa-check"></i></span>';
     }
 
-    let contentHtml = msg;
+    let contentHtml =msg.replace(/\n/g, '<br>');
 
     // Detect if message is a file link
     if (msg.includes('<a href=') && msg.includes('download=')) {
