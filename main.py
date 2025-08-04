@@ -114,9 +114,23 @@ def ws_handler(ws):
             broadcast_user_list()
 
 # --- Entry point ---
+# if __name__ == "__main__":
+#     registered_users = load_users()
+#     port = int(os.environ.get("PORT", 8000))
+
+#     from hypercorn.asyncio import serve
+#     from hypercorn.config import Config
+#     import asyncio
+
+#     config = Config()
+#     config.bind = [f"0.0.0.0:{port}"]
+
+#     asyncio.run(serve(app, config))
+# --- Optional: Start Flask and WebSocket servers ---
+# Uncomment the following lines to run this script directly
 if __name__ == "__main__":
     registered_users = load_users()
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 10000))
 
     from hypercorn.asyncio import serve
     from hypercorn.config import Config
@@ -126,9 +140,6 @@ if __name__ == "__main__":
     config.bind = [f"0.0.0.0:{port}"]
 
     asyncio.run(serve(app, config))
-# --- Optional: Start Flask and WebSocket servers ---
-# Uncomment the following lines to run this script directly
-
 
 
 
